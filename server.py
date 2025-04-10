@@ -5,6 +5,10 @@ import sys
 import uuid
 from io import BytesIO
 from typing import Optional, Any, Union, List, Tuple
+from dotenv import load_dotenv # 导入 dotenv
+
+# 在其他导入和代码之前加载 .env 文件
+load_dotenv()
 
 import PIL.Image
 from google import genai

@@ -12,6 +12,7 @@ dependencies = [
     "google>=3.0.0",
     "google-genai>=1.7.0",
     "pillow>=11.1.0",
+    "python-dotenv>=0.21.0", # 添加 python-dotenv 依赖
 ]
 
 [tool.hatch.build.targets.wheel]
