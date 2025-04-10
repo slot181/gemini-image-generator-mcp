@@ -16,7 +16,7 @@ from google.genai import types
 from mcp.server.fastmcp import FastMCP
 
 from prompts import get_image_generation_prompt, get_image_transformation_prompt, get_translate_prompt
-from utils import save_image
+from utils import save_or_upload_image # <-- Import the updated function
 
 
 # Setup logging
@@ -166,7 +166,7 @@ async def process_image_with_gemini(
         model: Gemini model to use
 
     Returns:
-        str: Path to the saved image file  # <-- Updated docstring return type
+        str: Public URL of the uploaded image (if ImgBed configured) or local path to the saved image file.
     """
     # Call Gemini Vision API
     gemini_response = await call_gemini(
@@ -180,10 +180,10 @@ async def process_image_with_gemini(
     # Generate a filename for the image
     filename = await convert_prompt_to_filename(prompt)
     
-    # Save the image and return the path
-    saved_image_path = await save_image(gemini_response, filename)
+    # Save locally or upload to ImgBed and return the path/URL
+    result_path_or_url = await save_or_upload_image(gemini_response, filename)
 
-    return saved_image_path  # <-- Return only the path
+    return result_path_or_url
 
 
 async def process_image_transform(
@@ -199,7 +199,7 @@ async def process_image_transform(
         original_edit_prompt: Original user prompt for naming
 
     Returns:
-        str: Path to the transformed image file  # <-- Updated docstring return type
+        str: Public URL of the uploaded image (if ImgBed configured) or local path to the saved image file.
     """
     # Create prompt for image transformation
     edit_instructions = get_image_transformation_prompt(optimized_edit_prompt)
@@ -255,7 +255,7 @@ async def generate_image_from_text(prompt: str) -> str:  # <-- Changed return ty
         prompt: User's text prompt describing the desired image to generate
 
     Returns:
-        str: Path to the generated image file saved on the server  # <-- Updated docstring
+        str: Public URL of the generated image (if ImgBed configured) or local path to the saved image file.
     """
     try:
         # Translate the prompt to English
@@ -265,8 +265,8 @@ async def generate_image_from_text(prompt: str) -> str:  # <-- Changed return ty
         contents = get_image_generation_prompt(translated_prompt)
         
         # Process with Gemini and return the result
-        image_path = await process_image_with_gemini([contents], prompt)
-        return image_path # <-- Return only the path
+        result_path_or_url = await process_image_with_gemini([contents], prompt)
+        return result_path_or_url
         
     except Exception as e:
         error_msg = f"Error generating image: {str(e)}"
@@ -285,7 +285,7 @@ async def transform_image_from_encoded(encoded_image: str, prompt: str) -> str: 
         prompt: Text prompt describing the desired transformation or modifications
 
     Returns:
-        str: Path to the transformed image file saved on the server # <-- Updated docstring return type
+        str: Public URL of the transformed image (if ImgBed configured) or local path to the saved image file.
     """
     try:
         logger.info(f"Processing transform_image_from_encoded request with prompt: {prompt}")
@@ -297,8 +297,8 @@ async def transform_image_from_encoded(encoded_image: str, prompt: str) -> str: 
         translated_prompt = await translate_prompt(prompt)
         
         # Process the transformation
-        image_path = await process_image_transform(source_image, translated_prompt, prompt)
-        return image_path # <-- Return only the path
+        result_path_or_url = await process_image_transform(source_image, translated_prompt, prompt)
+        return result_path_or_url
         
     except Exception as e:
         error_msg = f"Error transforming image: {str(e)}"
@@ -315,7 +315,7 @@ async def transform_image_from_file(image_file_path: str, prompt: str) -> str:  
         prompt: Text prompt describing the desired transformation or modifications
 
     Returns:
-        str: Path to the transformed image file saved on the server # <-- Updated docstring return type
+        str: Public URL of the transformed image (if ImgBed configured) or local path to the saved image file.
     """
     try:
         logger.info(f"Processing transform_image_from_file request with prompt: {prompt}")
@@ -340,8 +340,8 @@ async def transform_image_from_file(image_file_path: str, prompt: str) -> str:  
             raise 
         
         # Process the transformation
-        image_path = await process_image_transform(source_image, translated_prompt, prompt)
-        return image_path # <-- Return only the path
+        result_path_or_url = await process_image_transform(source_image, translated_prompt, prompt)
+        return result_path_or_url
         
     except Exception as e:
         error_msg = f"Error transforming image: {str(e)}"

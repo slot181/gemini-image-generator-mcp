@@ -13,6 +13,7 @@ dependencies = [
     "google-genai>=1.7.0",
     "pillow>=11.1.0",
     "python-dotenv>=0.21.0", # 添加 python-dotenv 依赖
+    "httpx>=0.27.0",          # 添加 httpx 用于发送 HTTP 请求
 ]
 
 [tool.hatch.build.targets.wheel]
