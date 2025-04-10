@@ -55,9 +55,9 @@ async def save_image(image_data: bytes, filename: str) -> str:
         image.save(image_path)
         logger.info(f"Image saved to {image_path}")
         
-        # Display the image
-        image.show()
-        
+        # Displaying the image is usually not needed in a server context.
+        # image.show()
+
         return image_path
     except Exception as e:
         logger.error(f"Error saving image: {str(e)}")

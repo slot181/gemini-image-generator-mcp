@@ -154,19 +154,19 @@ async def translate_prompt(text: str) -> str:
 # ==================== Image Processing Functions ====================
 
 async def process_image_with_gemini(
-    contents: List[Any], 
-    prompt: str, 
+    contents: List[Any],
+    prompt: str,
     model: str = "gemini-2.0-flash-exp-image-generation"
-) -> Tuple[bytes, str]:
+) -> str:  # <-- Changed return type annotation
     """Process an image request with Gemini and save the result.
-    
+
     Args:
         contents: List containing the prompt and optionally an image
         prompt: Original prompt for filename generation
         model: Gemini model to use
-        
+
     Returns:
-        Path to the saved image file
+        str: Path to the saved image file  # <-- Updated docstring return type
     """
     # Call Gemini Vision API
     gemini_response = await call_gemini(
@@ -183,23 +183,23 @@ async def process_image_with_gemini(
     # Save the image and return the path
     saved_image_path = await save_image(gemini_response, filename)
 
-    return gemini_response, saved_image_path
+    return saved_image_path  # <-- Return only the path
 
 
 async def process_image_transform(
-    source_image: PIL.Image.Image, 
-    optimized_edit_prompt: str, 
+    source_image: PIL.Image.Image,
+    optimized_edit_prompt: str,
     original_edit_prompt: str
-) -> Tuple[bytes, str]:
+) -> str:  # <-- Changed return type annotation
     """Process image transformation with Gemini.
-    
+
     Args:
         source_image: PIL Image object to transform
         optimized_edit_prompt: Optimized text prompt for transformation
         original_edit_prompt: Original user prompt for naming
-        
+
     Returns:
-        Path to the transformed image file
+        str: Path to the transformed image file  # <-- Updated docstring return type
     """
     # Create prompt for image transformation
     edit_instructions = get_image_transformation_prompt(optimized_edit_prompt)
@@ -248,14 +248,14 @@ async def load_image_from_base64(encoded_image: str) -> Tuple[PIL.Image.Image, s
 # ==================== MCP Tools ====================
 
 @mcp.tool()
-async def generate_image_from_text(prompt: str) -> Tuple[bytes, str]:
+async def generate_image_from_text(prompt: str) -> str:  # <-- Changed return type annotation
     """Generate an image based on the given text prompt using Google's Gemini model.
 
     Args:
         prompt: User's text prompt describing the desired image to generate
-        
+
     Returns:
-        Path to the generated image file using Gemini's image generation capabilities
+        str: Path to the generated image file saved on the server  # <-- Updated docstring
     """
     try:
         # Translate the prompt to English
@@ -265,7 +265,8 @@ async def generate_image_from_text(prompt: str) -> Tuple[bytes, str]:
         contents = get_image_generation_prompt(translated_prompt)
         
         # Process with Gemini and return the result
-        return await process_image_with_gemini([contents], prompt)
+        image_path = await process_image_with_gemini([contents], prompt)
+        return image_path # <-- Return only the path
         
     except Exception as e:
         error_msg = f"Error generating image: {str(e)}"
@@ -274,7 +275,7 @@ async def generate_image_from_text(prompt: str) -> Tuple[bytes, str]:
 
 
 @mcp.tool()
-async def transform_image_from_encoded(encoded_image: str, prompt: str) -> Tuple[bytes, str]:
+async def transform_image_from_encoded(encoded_image: str, prompt: str) -> str:  # <-- Changed return type annotation
     """Transform an existing image based on the given text prompt using Google's Gemini model.
 
     Args:
@@ -282,9 +283,9 @@ async def transform_image_from_encoded(encoded_image: str, prompt: str) -> Tuple
                     "data:image/[format];base64,[data]"
                     Where [format] can be: png, jpeg, jpg, gif, webp, etc.
         prompt: Text prompt describing the desired transformation or modifications
-        
+
     Returns:
-        Path to the transformed image file saved on the server
+        str: Path to the transformed image file saved on the server # <-- Updated docstring return type
     """
     try:
         logger.info(f"Processing transform_image_from_encoded request with prompt: {prompt}")
@@ -296,7 +297,8 @@ async def transform_image_from_encoded(encoded_image: str, prompt: str) -> Tuple
         translated_prompt = await translate_prompt(prompt)
         
         # Process the transformation
-        return await process_image_transform(source_image, translated_prompt, prompt)
+        image_path = await process_image_transform(source_image, translated_prompt, prompt)
+        return image_path # <-- Return only the path
         
     except Exception as e:
         error_msg = f"Error transforming image: {str(e)}"
@@ -305,15 +307,15 @@ async def transform_image_from_encoded(encoded_image: str, prompt: str) -> Tuple
 
 
 @mcp.tool()
-async def transform_image_from_file(image_file_path: str, prompt: str) -> Tuple[bytes, str]:
+async def transform_image_from_file(image_file_path: str, prompt: str) -> str:  # <-- Changed return type annotation
     """Transform an existing image file based on the given text prompt using Google's Gemini model.
 
     Args:
         image_file_path: Path to the image file to be transformed
         prompt: Text prompt describing the desired transformation or modifications
-        
+
     Returns:
-        Path to the transformed image file saved on the server
+        str: Path to the transformed image file saved on the server # <-- Updated docstring return type
     """
     try:
         logger.info(f"Processing transform_image_from_file request with prompt: {prompt}")
@@ -338,7 +340,8 @@ async def transform_image_from_file(image_file_path: str, prompt: str) -> Tuple[
             raise 
         
         # Process the transformation
-        return await process_image_transform(source_image, translated_prompt, prompt)
+        image_path = await process_image_transform(source_image, translated_prompt, prompt)
+        return image_path # <-- Return only the path
         
     except Exception as e:
         error_msg = f"Error transforming image: {str(e)}"
