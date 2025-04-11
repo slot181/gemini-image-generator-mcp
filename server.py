@@ -248,14 +248,17 @@ async def load_image_from_base64(encoded_image: str) -> Tuple[PIL.Image.Image, s
 # ==================== MCP Tools ====================
 
 @mcp.tool()
-async def generate_image_from_text(prompt: str) -> str:  # <-- Changed return type annotation
+async def generate_image_from_text(prompt: str) -> str:
     """Generate an image based on the given text prompt using Google's Gemini model.
 
     Args:
         prompt: User's text prompt describing the desired image to generate
 
     Returns:
-        str: Public URL of the generated image (if ImgBed configured) or local path to the saved image file.
+        str: A string containing the result. If successful, it includes the public URL (if ImgBed configured)
+             and/or the local path (if local saving is configured). Recommend presenting the URL(s)
+             to the user in Markdown format (e.g., ![alt text](URL)).
+             Example: "Image uploaded to: [URL]\nAlso saved locally at: [PATH]" or just "[PATH]" or just "[URL]".
     """
     try:
         # Translate the prompt to English
@@ -275,7 +278,7 @@ async def generate_image_from_text(prompt: str) -> str:  # <-- Changed return ty
 
 
 @mcp.tool()
-async def transform_image_from_encoded(encoded_image: str, prompt: str) -> str:  # <-- Changed return type annotation
+async def transform_image_from_encoded(encoded_image: str, prompt: str) -> str:
     """Transform an existing image based on the given text prompt using Google's Gemini model.
 
     Args:
@@ -285,7 +288,10 @@ async def transform_image_from_encoded(encoded_image: str, prompt: str) -> str: 
         prompt: Text prompt describing the desired transformation or modifications
 
     Returns:
-        str: Public URL of the transformed image (if ImgBed configured) or local path to the saved image file.
+        str: A string containing the result. If successful, it includes the public URL (if ImgBed configured)
+             and/or the local path (if local saving is configured). Recommend presenting the URL(s)
+             to the user in Markdown format (e.g., ![alt text](URL)).
+             Example: "Image uploaded to: [URL]\nAlso saved locally at: [PATH]" or just "[PATH]" or just "[URL]".
     """
     try:
         logger.info(f"Processing transform_image_from_encoded request with prompt: {prompt}")
@@ -307,7 +313,7 @@ async def transform_image_from_encoded(encoded_image: str, prompt: str) -> str: 
 
 
 @mcp.tool()
-async def transform_image_from_file(image_file_path: str, prompt: str) -> str:  # <-- Changed return type annotation
+async def transform_image_from_file(image_file_path: str, prompt: str) -> str:
     """Transform an existing image file based on the given text prompt using Google's Gemini model.
 
     Args:
@@ -315,7 +321,10 @@ async def transform_image_from_file(image_file_path: str, prompt: str) -> str:  
         prompt: Text prompt describing the desired transformation or modifications
 
     Returns:
-        str: Public URL of the transformed image (if ImgBed configured) or local path to the saved image file.
+        str: A string containing the result. If successful, it includes the public URL (if ImgBed configured)
+             and/or the local path (if local saving is configured). Recommend presenting the URL(s)
+             to the user in Markdown format (e.g., ![alt text](URL)).
+             Example: "Image uploaded to: [URL]\nAlso saved locally at: [PATH]" or just "[PATH]" or just "[URL]".
     """
     try:
         logger.info(f"Processing transform_image_from_file request with prompt: {prompt}")
