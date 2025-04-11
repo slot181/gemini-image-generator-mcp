@@ -280,10 +280,12 @@ async def generate_image_from_text(prompt: str) -> str:
 @mcp.tool()
 async def transform_image_from_file(image_filename: str, prompt: str) -> str:
     """Transform an existing image file based on its filename and a text prompt using Google's Gemini model.
-       The image file must exist within the configured OUTPUT_IMAGE_PATH.
+
+    **Important:** Before calling this tool, use the `list_generated_images` tool to get a list of available image filenames in the output directory. Then, provide the exact filename you want to modify in the `image_filename` parameter.
 
     Args:
-        image_filename: Filename of the image to be transformed (e.g., "my_image.png").
+        image_filename: Exact filename of the image to be transformed (e.g., "my_image_20240101_120000_abcdef12.png").
+                        Use `list_generated_images` to find the correct filename.
         prompt: Text prompt describing the desired transformation or modifications. It is recommended to provide the prompt in English for best results with the Gemini model.
 
     Returns:
