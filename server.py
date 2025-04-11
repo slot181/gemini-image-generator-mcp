@@ -253,7 +253,7 @@ async def generate_image_from_text(prompt: str) -> str:
     """Generate an image based on the given text prompt using Google's Gemini model.
 
     Args:
-        prompt: User's text prompt describing the desired image to generate
+        prompt: User's text prompt describing the desired image to generate. It is recommended to provide the prompt in English for best results with the Gemini model.
 
     Returns:
         str: A string containing the result.
@@ -287,7 +287,7 @@ async def transform_image_from_file(image_file_path: str, prompt: str) -> str:
 
     Args:
         image_file_path: Path to the image file to be transformed
-        prompt: Text prompt describing the desired transformation or modifications
+        prompt: Text prompt describing the desired transformation or modifications. It is recommended to provide the prompt in English for best results with the Gemini model.
 
     Returns:
         str: A string containing the result.
