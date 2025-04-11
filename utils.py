@@ -11,15 +11,42 @@ logger = logging.getLogger(__name__)
 CF_IMGBED_UPLOAD_URL = os.getenv("CF_IMGBED_UPLOAD_URL")
 CF_IMGBED_API_KEY = os.getenv("CF_IMGBED_API_KEY")
 
-# 只有在未配置图床时才使用本地路径
-OUTPUT_IMAGE_PATH = None
-if not CF_IMGBED_UPLOAD_URL or not CF_IMGBED_API_KEY:
-    OUTPUT_IMAGE_PATH = os.getenv("OUTPUT_IMAGE_PATH") or os.path.expanduser("~/gen_image")
+# --- Local Save Path Configuration (Always attempt to read) ---
+OUTPUT_IMAGE_PATH = os.getenv("OUTPUT_IMAGE_PATH") # Read from environment
+DEFAULT_LOCAL_PATH = os.path.expanduser("~/gen_image") # Define default path
+
+if OUTPUT_IMAGE_PATH:
+    logger.info(f"Local save path configured: {OUTPUT_IMAGE_PATH}")
+    # Ensure the directory exists
     if not os.path.exists(OUTPUT_IMAGE_PATH):
-        os.makedirs(OUTPUT_IMAGE_PATH)
-    logger.warning("CloudFlare-ImgBed URL or API Key not configured. Images will be saved locally.")
+        try:
+            os.makedirs(OUTPUT_IMAGE_PATH)
+            logger.info(f"Created local save directory: {OUTPUT_IMAGE_PATH}")
+        except OSError as e:
+            logger.error(f"Failed to create local save directory {OUTPUT_IMAGE_PATH}: {e}. Local saving might fail.")
+            OUTPUT_IMAGE_PATH = None # Disable local saving if directory creation fails
 else:
-    logger.info("CloudFlare-ImgBed configured. Images will be uploaded to the image bed.")
+    # Optionally, decide if you want to use a default path if the env var is not set
+    # If you want a default path uncomment the following lines:
+    # logger.warning(f"OUTPUT_IMAGE_PATH environment variable not set. Using default local path: {DEFAULT_LOCAL_PATH}")
+    # OUTPUT_IMAGE_PATH = DEFAULT_LOCAL_PATH
+    # if not os.path.exists(OUTPUT_IMAGE_PATH):
+    #     try:
+    #         os.makedirs(OUTPUT_IMAGE_PATH)
+    #         logger.info(f"Created default local save directory: {DEFAULT_LOCAL_PATH}")
+    #     except OSError as e:
+    #         logger.error(f"Failed to create default local save directory {DEFAULT_LOCAL_PATH}: {e}. Disabling local saving.")
+    #         OUTPUT_IMAGE_PATH = None # Disable if default creation fails
+    # else: # If you DON'T want a default path, keep OUTPUT_IMAGE_PATH as None
+        logger.info("OUTPUT_IMAGE_PATH not configured. Local saving is disabled.")
+        OUTPUT_IMAGE_PATH = None # Explicitly set to None if not configured
+
+# --- Log ImgBed Configuration Status ---
+if CF_IMGBED_UPLOAD_URL and CF_IMGBED_API_KEY:
+    logger.info("CloudFlare-ImgBed configured. Will attempt to upload.")
+else:
+    logger.warning("CloudFlare-ImgBed URL or API Key not configured. Upload to ImgBed is disabled.")
+
 
 def validate_base64_image(base64_string: str) -> bool:
     """Validate if a string is a valid base64-encoded image.
