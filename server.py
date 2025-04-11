@@ -284,7 +284,6 @@ async def transform_image_from_file(image_filename: str, prompt: str) -> str:
 
     Args:
         image_filename: Filename of the image to be transformed (e.g., "my_image.png").
-                        This file must be located inside the directory specified by the OUTPUT_IMAGE_PATH environment variable.
         prompt: Text prompt describing the desired transformation or modifications. It is recommended to provide the prompt in English for best results with the Gemini model.
 
     Returns:
