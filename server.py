@@ -256,11 +256,13 @@ async def generate_image_from_text(prompt: str) -> str:
         prompt: User's text prompt describing the desired image to generate
 
     Returns:
-        str: A string containing the result. If successful, it includes the public URL (if ImgBed configured)
-             and the local path (if local saving is configured and successful).
-             Example format if both succeed: "Image uploaded to: [URL]\nAlso saved locally at: [PATH]"
-             Example if only local save: "Image saved locally to: [PATH]"
-             Example if only upload: "Image uploaded to: [URL]\n(Local save failed or disabled)"
+        str: A string containing the result.
+             - If upload to ImgBed is successful, includes the public URL. Recommend presenting this URL
+               to the user in Markdown format (e.g., `![Generated Image](URL)`).
+             - If local saving is successful, includes the full local path. Recommend explicitly stating this path.
+             Example combined output: "Image available at: ![Generated Image](URL)\nSaved locally at: /path/to/image.png"
+             Example local only: "Image saved locally at: /path/to/image.png"
+             Example upload only: "Image available at: ![Generated Image](URL)\n(Local save failed or disabled)"
     """
     try:
         # Translate the prompt to English
@@ -288,11 +290,13 @@ async def transform_image_from_file(image_file_path: str, prompt: str) -> str:
         prompt: Text prompt describing the desired transformation or modifications
 
     Returns:
-        str: A string containing the result. If successful, it includes the public URL (if ImgBed configured)
-             and the local path (if local saving is configured and successful).
-             Example format if both succeed: "Image uploaded to: [URL]\nAlso saved locally at: [PATH]"
-             Example if only local save: "Image saved locally to: [PATH]"
-             Example if only upload: "Image uploaded to: [URL]\n(Local save failed or disabled)"
+        str: A string containing the result.
+             - If upload to ImgBed is successful, includes the public URL. Recommend presenting this URL
+               to the user in Markdown format (e.g., `![Transformed Image](URL)`).
+             - If local saving is successful, includes the full local path. Recommend explicitly stating this path.
+             Example combined output: "Transformed image available at: ![Transformed Image](URL)\nSaved locally at: /path/to/image.png"
+             Example local only: "Transformed image saved locally at: /path/to/image.png"
+             Example upload only: "Transformed image available at: ![Transformed Image](URL)\n(Local save failed or disabled)"
     """
     try:
         logger.info(f"Processing transform_image_from_file request with prompt: {prompt}")
