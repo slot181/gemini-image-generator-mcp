@@ -100,48 +100,75 @@ async def upload_to_cf_imgbed(image_data: bytes, filename: str) -> str:
             raise
 
 
+async def _save_locally(image_data: bytes, filename_with_ext: str) -> str:
+    """Helper function to save image data locally."""
+    if not OUTPUT_IMAGE_PATH:
+         raise ValueError("Local save requested but OUTPUT_IMAGE_PATH is not configured.")
+    try:
+        # Open image from bytes
+        image = PIL.Image.open(io.BytesIO(image_data))
+        # Save the image locally
+        local_image_path = os.path.join(OUTPUT_IMAGE_PATH, filename_with_ext)
+        image.save(local_image_path)
+        logger.info(f"Image saved locally to {local_image_path}")
+        return local_image_path
+    except Exception as e:
+        logger.error(f"Error saving image locally: {str(e)}")
+        raise
+
 async def save_or_upload_image(image_data: bytes, filename_base: str) -> str:
     """Save image locally or upload to CloudFlare-ImgBed based on configuration.
+       If upload succeeds, also attempts to save locally if configured.
 
     Args:
         image_data: Raw image data (bytes).
         filename_base: Base string for the filename (without extension).
 
     Returns:
-        If ImgBed is configured: The public URL of the uploaded image.
-        Otherwise: The local path to the saved image file.
+        The public URL of the uploaded image if upload succeeds.
+        The local path to the saved image file if upload fails (fallback) or if ImgBed is not configured.
     """
     filename_with_ext = f"{filename_base}.png" # Assume PNG for now
 
     if CF_IMGBED_UPLOAD_URL and CF_IMGBED_API_KEY:
-        # Upload to ImgBed
+        # Attempt to upload to ImgBed first
         try:
-            return await upload_to_cf_imgbed(image_data, filename_with_ext)
-        except Exception as upload_error:
-            logger.error(f"ImgBed upload failed: {upload_error}. Falling back to local save.")
-            # Fallback to local save if upload fails and local path is configured
+            uploaded_url = await upload_to_cf_imgbed(image_data, filename_with_ext)
+            logger.info(f"Successfully uploaded to ImgBed: {uploaded_url}")
+
+            # --- Also save locally if upload succeeded and local path is configured ---
             if OUTPUT_IMAGE_PATH:
-                pass # Proceed to local save logic below
+                try:
+                    await _save_locally(image_data, filename_with_ext)
+                    logger.info("Also saved a local copy.")
+                except Exception as local_save_error:
+                    # Log warning but don't fail the overall operation if only local save fails
+                    logger.warning(f"ImgBed upload succeeded, but saving local copy failed: {local_save_error}")
+            # --- End local save attempt ---
+
+            return uploaded_url # Return the uploaded URL as the primary result
+
+        except Exception as upload_error:
+            logger.error(f"ImgBed upload failed: {upload_error}. Checking for local fallback.")
+            # Fallback to local save ONLY if configured
+            if OUTPUT_IMAGE_PATH:
+                logger.warning("Falling back to local save.")
+                # Proceed to local save logic below
+                pass # Let execution continue to the local save block
             else:
-                raise upload_error # Re-raise if no local fallback is possible
-    
-    # --- Local Save Logic (Fallback or if ImgBed not configured) ---
-    if not OUTPUT_IMAGE_PATH:
-         raise ValueError("Image saving/upload failed: Neither ImgBed nor local OUTPUT_IMAGE_PATH is configured.")
+                # No fallback possible, re-raise the original upload error
+                logger.error("No local save path configured. Upload error cannot be recovered.")
+                raise upload_error
+    else:
+         logger.info("ImgBed not configured. Proceeding with local save if configured.")
+         # Proceed to local save logic below
 
-    try:
-        # Open image from bytes
-        image = PIL.Image.open(io.BytesIO(image_data))
-
-        # Save the image locally
-        local_image_path = os.path.join(OUTPUT_IMAGE_PATH, filename_with_ext)
-        image.save(local_image_path)
-        logger.info(f"Image saved locally to {local_image_path}")
-
-        # Displaying the image is usually not needed in a server context.
-        # image.show()
-
-        return local_image_path # Return local path as fallback/default
-    except Exception as e:
-        logger.error(f"Error saving image locally: {str(e)}")
-        raise
+    # --- Local Save Logic (Primary if ImgBed not configured, or Fallback if upload failed) ---
+    if OUTPUT_IMAGE_PATH:
+         # This block is reached if ImgBed is not configured OR if upload failed and fallback is enabled
+         return await _save_locally(image_data, filename_with_ext)
+    else:
+         # This case is reached if ImgBed wasn't configured AND local wasn't configured,
+         # OR if upload failed and local fallback wasn't configured (error already raised above).
+         # Primarily handles the case where no storage option is configured at all.
+         raise ValueError("Image saving failed: Neither ImgBed nor local OUTPUT_IMAGE_PATH is configured or available.")
