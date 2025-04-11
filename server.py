@@ -256,13 +256,7 @@ async def generate_image_from_text(prompt: str) -> str:
         prompt: User's text prompt describing the desired image to generate. It is recommended to provide the prompt in English for best results with the Gemini model.
 
     Returns:
-        str: A string containing the result.
-             - If upload to ImgBed is successful, includes the public URL. Recommend presenting this URL
-               to the user in Markdown format (e.g., `![Generated Image](URL)`).
-             - If local saving is successful, includes the full local path. Recommend explicitly stating this path.
-             Example combined output: "Image available at: ![Generated Image](URL)\nSaved locally at: /path/to/image.png"
-             Example local only: "Image saved locally at: /path/to/image.png"
-             Example upload only: "Image available at: ![Generated Image](URL)\n(Local save failed or disabled)"
+        str: A string containing the result, which could be a public URL (if uploaded) or a local file path.
     """
     try:
         # Translate the prompt to English
@@ -286,17 +280,12 @@ async def transform_image_from_file(image_file_path: str, prompt: str) -> str:
     """Transform an existing image file based on the given text prompt using Google's Gemini model.
 
     Args:
-        image_file_path: Path to the image file to be transformed
+        image_file_path: Absolute path to the image file to be transformed.
         prompt: Text prompt describing the desired transformation or modifications. It is recommended to provide the prompt in English for best results with the Gemini model.
 
     Returns:
-        str: A string containing the result.
-             - If upload to ImgBed is successful, includes the public URL. Recommend presenting this URL
-               to the user in Markdown format (e.g., `![Transformed Image](URL)`).
-             - If local saving is successful, includes the full local path. Recommend explicitly stating this path.
-             Example combined output: "Transformed image available at: ![Transformed Image](URL)\nSaved locally at: /path/to/image.png"
-             Example local only: "Transformed image saved locally at: /path/to/image.png"
-             Example upload only: "Transformed image available at: ![Transformed Image](URL)\n(Local save failed or disabled)"
+        str: A string containing the result, which could be a public URL (if uploaded) or a local file path.
+             If the exact path of the newly generated image is needed, use the `list_generated_images` tool.
     """
     try:
         logger.info(f"Processing transform_image_from_file request with prompt: {prompt}")
@@ -329,13 +318,17 @@ async def transform_image_from_file(image_file_path: str, prompt: str) -> str:
         logger.error(error_msg)
         return error_msg
 @mcp.tool()
-async def list_generated_images() -> Union[List[str], str]:
-    """List all generated image files stored in the configured OUTPUT_IMAGE_PATH.
+async def list_generated_images(limit: Optional[int] = None) -> Union[List[str], str]:
+    """List generated image files stored in the configured OUTPUT_IMAGE_PATH.
+
+    Args:
+        limit (Optional[int]): Maximum number of image paths to return.
+                               If provided, must be between 10 and 100 (inclusive).
+                               If None or not provided, returns all found images.
 
     Returns:
-        Union[List[str], str]: A list of full paths to the image files found,
-                               or a string message if the directory is not configured,
-                               does not exist, or is empty.
+        Union[List[str], str]: A list of full paths to the image files found (up to the limit),
+                               or an error message string.
     """
     if not OUTPUT_IMAGE_PATH:
         return "Error: OUTPUT_IMAGE_PATH is not configured. Cannot list images."
@@ -355,9 +348,26 @@ async def list_generated_images() -> Union[List[str], str]:
         if not image_files:
             return f"No images found in '{OUTPUT_IMAGE_PATH}'."
         
-        # Return the list of full paths
-        logger.info(f"Found {len(image_files)} images.")
-        return image_files
+        # Apply limit if specified and valid
+        if limit is not None:
+            if not (10 <= limit <= 100):
+                 return f"Error: Invalid limit value '{limit}'. Limit must be between 10 and 100."
+            logger.info(f"Found {len(image_files)} images. Returning up to {limit}.")
+            # Sort files by modification time, newest first, before limiting
+            try:
+                image_files.sort(key=os.path.getmtime, reverse=True)
+            except Exception as sort_e:
+                logger.warning(f"Could not sort image files by modification time: {sort_e}. Returning in default order.")
+            return image_files[:limit]
+        else:
+            # Return the full list of paths if no limit
+            logger.info(f"Found {len(image_files)} images. Returning all.")
+            # Optionally sort here as well if desired for the unlimited case
+            # try:
+            #     image_files.sort(key=os.path.getmtime, reverse=True)
+            # except Exception as sort_e:
+            #     logger.warning(f"Could not sort image files by modification time: {sort_e}. Returning in default order.")
+            return image_files
 
     except Exception as e:
         error_msg = f"Error listing images in {OUTPUT_IMAGE_PATH}: {str(e)}"

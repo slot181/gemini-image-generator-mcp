@@ -5,7 +5,7 @@ import uuid # <-- Add missing import
 import os
 import httpx # 导入 httpx
 import PIL.Image
-
+from datetime import datetime # <-- Import datetime
 logger = logging.getLogger(__name__)
 
 # 从环境变量读取图床配置
@@ -156,10 +156,13 @@ async def save_or_upload_image(image_data: bytes, filename_base: str) -> str:
         A string containing the public URL (if upload succeeded) and/or the local path (if local save succeeded or was used as fallback).
         Example format if both succeed: "Image uploaded to: [URL]\nAlso saved locally at: [PATH]"
     """
-    # Generate unique filename prefix and combine with AI-generated base + extension
+    # Generate timestamp and unique filename prefix
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     unique_prefix = str(uuid.uuid4())[:8]
-    filename_with_unique_ext = f"{unique_prefix}_{filename_base}.png" # Assume PNG for now
-    filename_with_ext = f"{filename_base}.png" # Assume PNG for now
+    # Combine AI-generated base, timestamp, unique prefix, and extension
+    filename_with_unique_ext = f"{filename_base}_{timestamp}_{unique_prefix}.png" # Assume PNG for now
+    # filename_with_ext is not used for saving/uploading with the unique name, can be removed or kept if needed elsewhere
+    # filename_with_ext = f"{filename_base}.png"
 
     if CF_IMGBED_UPLOAD_URL and CF_IMGBED_API_KEY:
         # Attempt to upload to ImgBed first
