@@ -5,6 +5,7 @@ import sys
 import uuid
 from io import BytesIO
 from typing import Optional, Any, Union, List, Tuple
+import glob # <-- Add glob import
 from dotenv import load_dotenv # 导入 dotenv
 
 # 在其他导入和代码之前加载 .env 文件
@@ -16,7 +17,7 @@ from google.genai import types
 from mcp.server.fastmcp import FastMCP
 
 from prompts import get_image_generation_prompt, get_image_transformation_prompt, get_translate_prompt
-from utils import save_or_upload_image # <-- Import the updated function
+from utils import save_or_upload_image, OUTPUT_IMAGE_PATH # <-- Import the updated function and OUTPUT_IMAGE_PATH
 
 
 # Setup logging
@@ -256,9 +257,10 @@ async def generate_image_from_text(prompt: str) -> str:
 
     Returns:
         str: A string containing the result. If successful, it includes the public URL (if ImgBed configured)
-             and/or the local path (if local saving is configured). Recommend presenting the URL(s)
-             to the user in Markdown format (e.g., ![alt text](URL)).
-             Example: "Image uploaded to: [URL]\nAlso saved locally at: [PATH]" or just "[PATH]" or just "[URL]".
+             and the local path (if local saving is configured and successful).
+             Example format if both succeed: "Image uploaded to: [URL]\nAlso saved locally at: [PATH]"
+             Example if only local save: "Image saved locally to: [PATH]"
+             Example if only upload: "Image uploaded to: [URL]\n(Local save failed or disabled)"
     """
     try:
         # Translate the prompt to English
@@ -287,9 +289,10 @@ async def transform_image_from_file(image_file_path: str, prompt: str) -> str:
 
     Returns:
         str: A string containing the result. If successful, it includes the public URL (if ImgBed configured)
-             and/or the local path (if local saving is configured). Recommend presenting the URL(s)
-             to the user in Markdown format (e.g., ![alt text](URL)).
-             Example: "Image uploaded to: [URL]\nAlso saved locally at: [PATH]" or just "[PATH]" or just "[URL]".
+             and the local path (if local saving is configured and successful).
+             Example format if both succeed: "Image uploaded to: [URL]\nAlso saved locally at: [PATH]"
+             Example if only local save: "Image saved locally to: [PATH]"
+             Example if only upload: "Image uploaded to: [URL]\n(Local save failed or disabled)"
     """
     try:
         logger.info(f"Processing transform_image_from_file request with prompt: {prompt}")
@@ -321,6 +324,42 @@ async def transform_image_from_file(image_file_path: str, prompt: str) -> str:
         error_msg = f"Error transforming image: {str(e)}"
         logger.error(error_msg)
         return error_msg
+@mcp.tool()
+async def list_generated_images() -> Union[List[str], str]:
+    """List all generated image files stored in the configured OUTPUT_IMAGE_PATH.
+
+    Returns:
+        Union[List[str], str]: A list of full paths to the image files found,
+                               or a string message if the directory is not configured,
+                               does not exist, or is empty.
+    """
+    if not OUTPUT_IMAGE_PATH:
+        return "Error: OUTPUT_IMAGE_PATH is not configured. Cannot list images."
+    
+    if not os.path.isdir(OUTPUT_IMAGE_PATH):
+         return f"Error: Configured OUTPUT_IMAGE_PATH '{OUTPUT_IMAGE_PATH}' does not exist or is not a directory."
+
+    try:
+        logger.info(f"Listing images in directory: {OUTPUT_IMAGE_PATH}")
+        image_patterns = ["*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp"]
+        image_files = []
+        for pattern in image_patterns:
+            # Use glob to find files matching the pattern within the directory
+            full_pattern = os.path.join(OUTPUT_IMAGE_PATH, pattern)
+            image_files.extend(glob.glob(full_pattern))
+
+        if not image_files:
+            return f"No images found in '{OUTPUT_IMAGE_PATH}'."
+        
+        # Return the list of full paths
+        logger.info(f"Found {len(image_files)} images.")
+        return image_files
+
+    except Exception as e:
+        error_msg = f"Error listing images in {OUTPUT_IMAGE_PATH}: {str(e)}"
+        logger.error(error_msg)
+        return error_msg
+
 
 
 if __name__ == "__main__":
