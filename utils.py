@@ -81,8 +81,11 @@ async def upload_to_cf_imgbed(image_data: bytes, filename: str) -> str:
             if isinstance(response_data, list) and len(response_data) > 0 and 'src' in response_data[0]:
                 image_path_segment = response_data[0]['src']
                 # Construct the full URL based on the upload URL's origin
-                base_url = httpx.URL(CF_IMGBED_UPLOAD_URL).origin
-                full_url = str(base_url.join(image_path_segment))
+                # Manually construct the base URL from scheme and host for robustness
+                parsed_upload_url = httpx.URL(CF_IMGBED_UPLOAD_URL)
+                base_url_str = f"{parsed_upload_url.scheme}://{parsed_upload_url.host}"
+                # Use httpx.URL again to correctly join the base and the path segment
+                full_url = str(httpx.URL(base_url_str).join(image_path_segment))
                 logger.info(f"Image uploaded successfully: {full_url}")
                 return full_url
             else:
