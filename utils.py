@@ -1,6 +1,7 @@
 import base64
 import io
 import logging
+import uuid # <-- Add missing import
 import os
 import httpx # 导入 httpx
 import PIL.Image
