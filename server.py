@@ -256,7 +256,9 @@ async def generate_image_from_text(prompt: str) -> str:
         prompt: User's text prompt describing the desired image to generate. It is recommended to provide the prompt in English for best results with the Gemini model.
 
     Returns:
-        str: A string containing the result, which could be a public URL (if uploaded) or a local file path.
+        str: The public URL of the generated image if upload to ImgBed was successful,
+             otherwise the filename of the locally saved image (if local save succeeded).
+             Returns an error message string if both fail.
     """
     try:
         # Translate the prompt to English
@@ -286,8 +288,9 @@ async def transform_image_from_file(image_filename: str, prompt: str) -> str:
         prompt: Text prompt describing the desired transformation or modifications. It is recommended to provide the prompt in English for best results with the Gemini model.
 
     Returns:
-        str: The filename of the newly generated transformed image (e.g., "transformed_image_20240101_120000_abcdef12.png").
-             This new file will also be saved in the OUTPUT_IMAGE_PATH directory.
+        str: The public URL of the transformed image if upload to ImgBed was successful,
+             otherwise the filename of the locally saved transformed image (if local save succeeded).
+             Returns an error message string if both fail.
     """
     try:
         logger.info(f"Processing transform_image_from_file request with filename: {image_filename} and prompt: {prompt}")
