@@ -278,41 +278,6 @@ async def generate_image_from_text(prompt: str) -> str:
 
 
 @mcp.tool()
-async def transform_image_from_encoded(encoded_image: str, prompt: str) -> str:
-    """Transform an existing image based on the given text prompt using Google's Gemini model.
-
-    Args:
-        encoded_image: Base64 encoded image data with header. Must be in format:
-                    "data:image/[format];base64,[data]"
-                    Where [format] can be: png, jpeg, jpg, gif, webp, etc.
-        prompt: Text prompt describing the desired transformation or modifications
-
-    Returns:
-        str: A string containing the result. If successful, it includes the public URL (if ImgBed configured)
-             and/or the local path (if local saving is configured). Recommend presenting the URL(s)
-             to the user in Markdown format (e.g., ![alt text](URL)).
-             Example: "Image uploaded to: [URL]\nAlso saved locally at: [PATH]" or just "[PATH]" or just "[URL]".
-    """
-    try:
-        logger.info(f"Processing transform_image_from_encoded request with prompt: {prompt}")
-
-        # Load and validate the image
-        source_image, _ = await load_image_from_base64(encoded_image)
-        
-        # Translate the prompt to English
-        translated_prompt = await translate_prompt(prompt)
-        
-        # Process the transformation
-        result_path_or_url = await process_image_transform(source_image, translated_prompt, prompt)
-        return result_path_or_url
-        
-    except Exception as e:
-        error_msg = f"Error transforming image: {str(e)}"
-        logger.error(error_msg)
-        return error_msg
-
-
-@mcp.tool()
 async def transform_image_from_file(image_file_path: str, prompt: str) -> str:
     """Transform an existing image file based on the given text prompt using Google's Gemini model.
 
