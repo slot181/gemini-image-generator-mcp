@@ -276,32 +276,39 @@ async def generate_image_from_text(prompt: str) -> str:
 
 
 @mcp.tool()
-async def transform_image_from_file(image_file_path: str, prompt: str) -> str:
-    """Transform an existing image file based on the given text prompt using Google's Gemini model.
+async def transform_image_from_file(image_filename: str, prompt: str) -> str:
+    """Transform an existing image file based on its filename and a text prompt using Google's Gemini model.
+       The image file must exist within the configured OUTPUT_IMAGE_PATH.
 
     Args:
-        image_file_path: Absolute path to the image file to be transformed.
+        image_filename: Filename of the image to be transformed (e.g., "my_image.png").
+                        This file must be located inside the directory specified by the OUTPUT_IMAGE_PATH environment variable.
         prompt: Text prompt describing the desired transformation or modifications. It is recommended to provide the prompt in English for best results with the Gemini model.
 
     Returns:
-        str: A string containing the result, which could be a public URL (if uploaded) or a local file path.
-             If the exact path of the newly generated image is needed, use the `list_generated_images` tool.
+        str: The filename of the newly generated transformed image (e.g., "transformed_image_20240101_120000_abcdef12.png").
+             This new file will also be saved in the OUTPUT_IMAGE_PATH directory.
     """
     try:
-        logger.info(f"Processing transform_image_from_file request with prompt: {prompt}")
-        logger.info(f"Image file path: {image_file_path}")
+        logger.info(f"Processing transform_image_from_file request with filename: {image_filename} and prompt: {prompt}")
 
-        # Validate file path
-        if not os.path.exists(image_file_path):
-            raise ValueError(f"Image file not found: {image_file_path}")
+        # Check if OUTPUT_IMAGE_PATH is configured
+        if not OUTPUT_IMAGE_PATH:
+             return "Error: OUTPUT_IMAGE_PATH is not configured. Cannot locate image file."
+
+        # Construct the full path and validate
+        full_image_path = os.path.join(OUTPUT_IMAGE_PATH, image_filename)
+        logger.info(f"Attempting to load image from full path: {full_image_path}")
+        if not os.path.exists(full_image_path):
+            return f"Error: Image file not found at expected location: {full_image_path}"
 
         # Translate the prompt to English
         translated_prompt = await translate_prompt(prompt)
             
         # Load the source image directly using PIL
         try:
-            source_image = PIL.Image.open(image_file_path)
-            logger.info(f"Successfully loaded image from file: {image_file_path}")
+            source_image = PIL.Image.open(full_image_path)
+            logger.info(f"Successfully loaded image from file: {full_image_path}")
         except PIL.UnidentifiedImageError:
             logger.error("Error: Could not identify image format")
             raise ValueError("Could not identify image format. Supported formats include PNG, JPEG, GIF, WebP.")
@@ -310,8 +317,9 @@ async def transform_image_from_file(image_file_path: str, prompt: str) -> str:
             raise 
         
         # Process the transformation
-        result_path_or_url = await process_image_transform(source_image, translated_prompt, prompt)
-        return result_path_or_url
+        # process_image_transform now returns the new filename thanks to utils.py changes
+        new_filename = await process_image_transform(source_image, translated_prompt, prompt)
+        return new_filename
         
     except Exception as e:
         error_msg = f"Error transforming image: {str(e)}"
