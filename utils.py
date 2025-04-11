@@ -181,25 +181,12 @@ async def save_or_upload_image(image_data: bytes, filename_base: str) -> str:
 
             # --- Also save locally if upload succeeded and local path is configured ---
             if OUTPUT_IMAGE_PATH:
-                local_save_path = None # Initialize local path variable
                 try:
-                    # Use the unique filename for local save
-                    local_save_path = await _save_locally(image_data, filename_with_unique_ext)
-                    logger.info(f"Also saved a local copy to: {local_save_path}")
+                    # Use the unique filename for local save. _save_locally returns the filename.
+                    saved_filename_locally = await _save_locally(image_data, filename_with_unique_ext)
+                    logger.info(f"Also saved a local copy: {saved_filename_locally}")
                 except Exception as local_save_error:
                     # Log warning but don't fail the overall operation if only local save fails
-                    logger.warning(f"ImgBed upload succeeded, but saving local copy failed: {local_save_error}")
-            # --- End local save attempt ---
-
-            # If upload succeeded, return the URL.
-            # We still attempt local save below, but the primary return is the URL.
-            local_save_path_after_upload = None # Initialize
-            if OUTPUT_IMAGE_PATH:
-                try:
-                    # Use the unique filename for local save
-                    local_save_path_after_upload = await _save_locally(image_data, filename_with_unique_ext) # _save_locally returns filename
-                    logger.info(f"Also saved a local copy: {local_save_path_after_upload}")
-                except Exception as local_save_error:
                     logger.warning(f"ImgBed upload succeeded, but saving local copy failed: {local_save_error}")
             # --- End local save attempt ---
 
