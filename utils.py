@@ -63,7 +63,9 @@ async def upload_to_cf_imgbed(image_data: bytes, filename: str) -> str:
     if not CF_IMGBED_UPLOAD_URL or not CF_IMGBED_API_KEY:
         raise ValueError("CloudFlare-ImgBed URL or API Key not configured in environment variables.")
 
-    upload_url_with_auth = f"{CF_IMGBED_UPLOAD_URL}?authCode={CF_IMGBED_API_KEY}"
+    # Check if the base URL already contains query parameters
+    separator = '&' if '?' in CF_IMGBED_UPLOAD_URL else '?'
+    upload_url_with_auth = f"{CF_IMGBED_UPLOAD_URL}{separator}authCode={CF_IMGBED_API_KEY}"
 
     files = {'file': (filename, image_data, 'image/png')} # Assume PNG, adjust if needed
 
